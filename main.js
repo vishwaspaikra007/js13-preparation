@@ -12,6 +12,7 @@ var framesCount = 0;
 var score = 0;
 var upgradeList = {};
 var bulletList = {};
+var canShort;
 
 var player = {
     name:'P',
@@ -22,7 +23,11 @@ var player = {
     width:20,
     height:20,
     hp:10,
-    color:'green'
+    color:'green',
+    pressingRight: false,
+    pressingDown: false,
+    pressingLeft: false,
+    pressingUp: false,
 };
 
 function enemy(id,x,y,xspd,yspd,width,height,color) {
@@ -49,7 +54,8 @@ bullets = (id,x,y,xspd,yspd,width,height,color,angle)=> {
         angle:angle,
         width:width,
         height:height,
-        color:color
+        color:color,
+        timer:0
     };
     bulletList[id] = bulletEntity;
 }
@@ -63,7 +69,8 @@ function upgrade(rid,rx,ry) {
         width:20,
         height:20,
         yspd:0,
-        color: 'green'
+        color: 'green',
+        timer:0
     };
     upgradeList[rid] = entity;
 }
@@ -157,58 +164,103 @@ var startNewGame = ()=> {
     score = 0;
     upgradeList = {};
     enemyList = {};
+    bulletList = {};
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
 }
+stayInBoundary = ()=> {
+    if(player.x < player.width/2)
+    player.x = player.width/2;
+    if(player.x > width - player.width/2)
+        player.x = width - player.width/2;
+    if(player.y < player.height/2)
+        player.y = player.height/2;
+    if(player.y > height - player.height/2)
+        player.y = height - player.height/2;
+}
+updatePlayerPosition = ()=> {
+    if(player.pressingRight == true) {
+        player.x+=10;
+    }
+    if(player.pressingDown == true) {
+        player.y+=10;
+    }
+    if(player.pressingLeft == true) {
+        player.x-=10;
+    }
+    if(player.pressingUp == true) {
+        player.y-=10;
+    }
+    stayInBoundary();
+}
 
 function update() {
+    var todelete = false;
     ctx.clearRect(0, 0, width, height);
-    if(framesCount%100 == 0) 
+    if(framesCount%50 == 0) 
         randomlyGenerateEnemy();
-    if(framesCount%70 == 0)
+    if(framesCount%100 == 0)
         randomlyGenerateUpgrade();
-    if(framesCount%25 == 0)
-        randomlyGenerateBullet();
+    // if(framesCount%25 == 0)
+    //     randomlyGenerateBullet();
     framesCount++; 
-    for(item in enemyList) {
+    // for enemies
+    for(var item in enemyList) {
         updateEntity(enemyList[item]);
         var isColliding = testCollision(player, enemyList[item]);
         if(isColliding) {
             player.hp--;
         }
-        for(bullet in bulletList) {
-            var isColliding = testCollision(bulletList[bullet], enemyList[item]);
-            if(isColliding) {
-                delete bulletList[bullet];
-                delete enemyList[item];
-            }
-        }
     } 
-    for(bullet in bulletList) {
+    // for bullets
+    for(var bullet in bulletList) {
+        bulletList[bullet].timer++;
         for( item in enemyList) {
             var isColliding = testCollision(bulletList[bullet], enemyList[item]);
             if(isColliding) {
                 delete bulletList[bullet];
                 delete enemyList[item];
                 break;
+            } else if(bulletList[bullet].timer >= 50) {
+                delete bulletList[bullet]; 
+                break;
             }
         }
     }
-    for( upgradeItem in upgradeList) {
+    //for upgrade
+    for(var upgradeItem in upgradeList) {
+        upgradeList[upgradeItem].timer++;
         updateEntity(upgradeList[upgradeItem]);
         var isColliding = testCollision(player, upgradeList[upgradeItem]);
         if(isColliding) {
             score+=1000;
             player.hp++;
             delete upgradeList[upgradeItem];
+        } else if(upgradeList[upgradeItem].timer>=100) {
+            delete upgradeList[upgradeItem];
         }
     }
+
     for( bullet in bulletList) {
         updateEntity(bulletList[bullet]);
     }
-    drawEntity(player);
-    ctx.fillText("Score " + score,200,20);
+
+    if(player.hp<=0) {
+    ctx.save()
+    ctx.font = '40px Arial';    
+    ctx.fillText("Game Over " + "Score:" + score,25,height/2);
+        setTimeout(() => {
+            startNewGame();            
+        }, 2000);
+    ctx.restore();
+    } else {
+        drawEntity(player);
+        ctx.fillText("HP" + player.hp,20,20);
+        ctx.fillText("Score " + score,200,20);
+        score++;
+    }
+    updatePlayerPosition();
 }
 
 var ant = setInterval(() => {
@@ -219,13 +271,42 @@ var ant = setInterval(() => {
 document.onmousemove = (mouse)=> {
     player.x = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
     player.y = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
-    if(player.x < player.width/2)
-        player.x = player.width/2;
-    if(player.x > width)
-        player.x = width - player.width/2;
-    if(player.y < 0)
-        player.y = player.height/2;
-    if(player.y > height)
-        player.y = height - player.height/2;
+    stayInBoundary();
+}
+
+document.onclick = ()=> {
+    randomlyGenerateBullet();
+}
+
+document.onkeydown =(event)=> {
+    if(event.keyCode == 68 || event.keyCode == 39) {
+        player.pressingRight = true;
+    } if(event.keyCode == 83 || event.keyCode == 40) {
+        player.pressingDown = true;        
+    } if(event.keyCode == 65 || event.keyCode == 37) {
+        player.pressingLeft = true;        
+    } if(event.keyCode == 87 || event.keyCode == 38) {
+        player.pressingUp = true;        
+    } if(event.keyCode == 32) {
+        if(canShort == true)
+            randomlyGenerateBullet();
+        canShort = false;        
+    }
+}
+
+document.onkeyup =(event)=> {
+    if(event.keyCode == 68 || event.keyCode == 39) {
+        player.pressingRight = false;
+    }if(event.keyCode == 83 || event.keyCode == 40) {
+        player.pressingDown = false;        
+    }if(event.keyCode == 65 || event.keyCode == 37) {
+        player.pressingLeft = false;        
+    }if(event.keyCode == 87 || event.keyCode == 38) {
+        player.pressingUp = false;        
+    } if(event.keyCode == 32) {
+        setTimeout(() => {
+            canShort = true;            
+        }, 300);
+    }
 }
 
