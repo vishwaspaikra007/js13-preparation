@@ -28,6 +28,7 @@ var player = {
     pressingDown: false,
     pressingLeft: false,
     pressingUp: false,
+    angle: 0
 };
 
 function enemy(id,x,y,xspd,yspd,width,height,color) {
@@ -137,16 +138,19 @@ var randomlyGenerateEnemy = ()=> {
     enemy(rid,rx,ry,rxspd,ryspd,rwidth,rheight,rcolor);
 } 
 
-var randomlyGenerateBullet = ()=> {
+var randomlyGenerateBullet = (entity,overwriteAngle)=> {
     var bid = Math.random();
-    var bx = player.x;
-    var by = player.y;
+    var bx = entity.x;
+    var by = entity.y;
     var bwidth = 10 ;
     var bheight = 10;
     var bcolor = `black`;
-    var bangle = Math.random()*360;
-    var bxspd = Math.cos(bangle/180*Math.PI)*5;
-    var byspd = Math.sin(bangle/180*Math.PI)*5;
+    var bangle = entity.angle;
+    if(overwriteAngle !== undefined) {
+        bangle = overwriteAngle;
+    }
+    var byspd = Math.cos(bangle/180*Math.PI)*5;
+    var bxspd = Math.sin(bangle/180*Math.PI)*5;
     //id,x,y,xspd,yspd,width,height,color
     bullets(bid,bx,by,bxspd,byspd,bwidth,bheight,bcolor,bangle);
 } 
@@ -269,15 +273,37 @@ var ant = setInterval(() => {
 
 
 document.onmousemove = (mouse)=> {
-    player.x = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
-    player.y = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
-    stayInBoundary();
-}
+    mouseX = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
+    mouseY = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
+    
+    mouseX-=player.x;
+    mouseY-=player.y;
 
+    player.angle = Math.atan2(mouseX,mouseY)/Math.PI * 180;
+}
+shoot = (entity,owa)=> {
+    if(canShort == true)
+            randomlyGenerateBullet(entity,owa);
+        canShort = false;
+}
+wait = ()=> {
+    setTimeout(() => {
+        canShort = true;            
+    }, 300);
+}
 document.onclick = ()=> {
-    randomlyGenerateBullet();
+    shoot(player);
+    wait();
+} 
+document.oncontextmenu = (event)=> {
+    event.preventDefault();
+    var angle=0;
+    while(angle <=360) {
+        shoot(player,player.angle - angle++);
+        canShort = true;
+    }
+    wait();
 }
-
 document.onkeydown =(event)=> {
     if(event.keyCode == 68 || event.keyCode == 39) {
         player.pressingRight = true;
@@ -288,9 +314,7 @@ document.onkeydown =(event)=> {
     } if(event.keyCode == 87 || event.keyCode == 38) {
         player.pressingUp = true;        
     } if(event.keyCode == 32) {
-        if(canShort == true)
-            randomlyGenerateBullet();
-        canShort = false;        
+        shoot(player);        
     }
 }
 
@@ -304,9 +328,7 @@ document.onkeyup =(event)=> {
     }if(event.keyCode == 87 || event.keyCode == 38) {
         player.pressingUp = false;        
     } if(event.keyCode == 32) {
-        setTimeout(() => {
-            canShort = true;            
-        }, 300);
+        wait();
     }
 }
 
