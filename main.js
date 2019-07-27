@@ -13,67 +13,55 @@ var score = 0;
 var upgradeList = {};
 var bulletList = {};
 var canShort;
+var player;
 
-var player = {
-    name:'P',
-    x:50,
-    y:50,
-    xspd:30,
-    yspd:5,
-    width:20,
-    height:20,
-    hp:10,
-    color:'green',
-    pressingRight: false,
-    pressingDown: false,
-    pressingLeft: false,
-    pressingUp: false,
-    angle: 0
-};
-
-function enemy(id,x,y,xspd,yspd,width,height,color) {
-    var enemy = {
-        id:id,
-        x:x,
-        y:y,
-        xspd:xspd,
-        width:width,
-        height:height,
-        yspd:yspd,
-        color:color
-    };
-    enemyList[id] = enemy;
-}
-
-bullets = (id,x,y,xspd,yspd,width,height,color,angle)=> {
-    var bulletEntity = {
+Entity = (type,id,x,y,xspd,yspd,width,height,color)=> {
+    var self = {
+        type:type,
         id:id,
         x:x,
         y:y,
         xspd:xspd,
         yspd:yspd,
-        angle:angle,
         width:width,
         height:height,
         color:color,
-        timer:0
-    };
-    bulletList[id] = bulletEntity;
+    }
+    self.update = () => {
+        updateEntityPosition(self);
+        drawEntity(self);
+    }
+    return self;
+}
+createPlayer = ()=> {
+    var self = Entity('player','myId',50,40,30,5,20,20,'green');
+    self.hp = 10;
+    self.pressingRight = false,
+    self.pressingDown = false,
+    self.pressingLeft = false,
+    self.pressingUp = false,
+    self.aimAngle = 0
+    player = self;
 }
 
-function upgrade(rid,rx,ry) {
-    var entity = {
-        id:rid,
-        x:rx,
-        y:ry,
-        xspd:0,
-        width:20,
-        height:20,
-        yspd:0,
-        color: 'green',
-        timer:0
-    };
-    upgradeList[rid] = entity;
+function enemy(id,x,y,xspd,yspd,width,height,color) {
+    var self = Entity('enemy',id,x,y,xspd,yspd,width,height,color);
+    self.aimAngle = 0;
+    self.attackSpeed = 0;
+    self.attackCounter = 0;
+    enemyList[id] = self;
+}
+
+bullets = (id,x,y,xspd,yspd,width,height,color,aimAngle)=> {
+    var self = Entity('bullets',id,x,y,xspd,yspd,width,height,color);
+    self.timer = 0;
+    bulletList[id] = self;
+}
+
+function upgrade(id,x,y,xspd,yspd,width,height,color) {
+    var self = Entity('upgrade',id,x,y,xspd,yspd,width,height,color);
+    self.timer = 0;
+    upgradeList[id] = self;
 }
 
 var drawEntity = (entity)=> {
@@ -84,37 +72,48 @@ var drawEntity = (entity)=> {
 }
 
 function updateEntityPosition(entity) {
-    entity.x+=entity.xspd;
-    entity.y+=entity.yspd;
-    if(entity.x>width || entity.x<0) {
-        entity.xspd=-entity.xspd;
-    }if(entity.y>height || entity.y<0) {
-        entity.yspd=-entity.yspd;
+    if(entity.type === 'player') {
+        if(player.pressingRight == true) {
+            player.x+=10;
+        }
+        if(player.pressingDown == true) {
+            player.y+=10;
+        }
+        if(player.pressingLeft == true) {
+            player.x-=10;
+        }
+        if(player.pressingUp == true) {
+            player.y-=10;
+        }
+        stayInBoundary();
+    } else {
+        entity.x+=entity.xspd;
+        entity.y+=entity.yspd;
+        if(entity.x>width || entity.x<0) {
+            entity.xspd=-entity.xspd;
+        }if(entity.y>height || entity.y<0) {
+            entity.yspd=-entity.yspd;
+        }
     }
+    
 }
-
-var updateEntity = (entity)=> {
-    updateEntityPosition(entity);
-    drawEntity(entity);
-}
-
 function getDistance(player, enemy) {
     var x = Math.abs(player.x - enemy.x);
     var y = Math.abs(player.y - enemy.y);
     return Math.sqrt(x*x + y*y);
 }
-function testCollisionRect (player, entity) {
-    return player.x<=entity.x+entity.width
-            && entity.x<=player.x+player.width
-            && player.y<=entity.y+entity.width
-            && entity.y<=player.y+player.width
+function testCollisionRect (entity1, entity) {
+    return entity1.x<=entity.x+entity.width
+            && entity.x<=entity1.x+entity1.width
+            && entity1.y<=entity.y+entity.width
+            && entity.y<=entity1.y+entity1.width
 }
-function testCollision(player, entity) {
+function testCollision(entity1, entity) {
     rect1 = {
-        x:player.x - player.width/2,
-        y:player.y - player.height/2,
-        width:player.width,
-        height:player.height
+        x:entity1.x - entity1.width/2,
+        y:entity1.y - entity1.height/2,
+        width:entity1.width,
+        height:entity1.height
     }
     rect2 = {
         x:entity.x - entity.width/2,
@@ -134,25 +133,23 @@ var randomlyGenerateEnemy = ()=> {
     var rwidth = 10 + Math.random()*30;
     var rheight = 10 + Math.random()*30;
     var rcolor = `rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255}`;
-    //id,x,y,xspd,yspd,width,height,color
     enemy(rid,rx,ry,rxspd,ryspd,rwidth,rheight,rcolor);
 } 
 
-var randomlyGenerateBullet = (entity,overwriteAngle)=> {
+var generateBullets = (entity,overwriteAngle)=> {
     var bid = Math.random();
     var bx = entity.x;
     var by = entity.y;
     var bwidth = 10 ;
     var bheight = 10;
     var bcolor = `black`;
-    var bangle = entity.angle;
+    var baimAngle = entity.aimAngle;
     if(overwriteAngle !== undefined) {
-        bangle = overwriteAngle;
+        baimAngle = overwriteAngle;
     }
-    var byspd = Math.cos(bangle/180*Math.PI)*5;
-    var bxspd = Math.sin(bangle/180*Math.PI)*5;
-    //id,x,y,xspd,yspd,width,height,color
-    bullets(bid,bx,by,bxspd,byspd,bwidth,bheight,bcolor,bangle);
+    var byspd = Math.cos(baimAngle/180*Math.PI)*5;
+    var bxspd = Math.sin(baimAngle/180*Math.PI)*5;
+    bullets(bid,bx,by,bxspd,byspd,bwidth,bheight,bcolor,baimAngle);
 } 
 
 var randomlyGenerateUpgrade = ()=> {
@@ -161,7 +158,7 @@ var randomlyGenerateUpgrade = ()=> {
     var ry = Math.random()*width;
     upgrade(rid,rx,ry);
 } 
-
+createPlayer();
 var startNewGame = ()=> {
     player.hp = 10;
     framesCount = 0;
@@ -183,35 +180,18 @@ stayInBoundary = ()=> {
     if(player.y > height - player.height/2)
         player.y = height - player.height/2;
 }
-updatePlayerPosition = ()=> {
-    if(player.pressingRight == true) {
-        player.x+=10;
-    }
-    if(player.pressingDown == true) {
-        player.y+=10;
-    }
-    if(player.pressingLeft == true) {
-        player.x-=10;
-    }
-    if(player.pressingUp == true) {
-        player.y-=10;
-    }
-    stayInBoundary();
-}
-
 function update() {
+
     var todelete = false;
     ctx.clearRect(0, 0, width, height);
     if(framesCount%50 == 0) 
         randomlyGenerateEnemy();
     if(framesCount%100 == 0)
         randomlyGenerateUpgrade();
-    // if(framesCount%25 == 0)
-    //     randomlyGenerateBullet();
     framesCount++; 
     // for enemies
     for(var item in enemyList) {
-        updateEntity(enemyList[item]);
+        enemyList[item].update();
         var isColliding = testCollision(player, enemyList[item]);
         if(isColliding) {
             player.hp--;
@@ -235,7 +215,7 @@ function update() {
     //for upgrade
     for(var upgradeItem in upgradeList) {
         upgradeList[upgradeItem].timer++;
-        updateEntity(upgradeList[upgradeItem]);
+        upgradeList[upgradeItem].update();
         var isColliding = testCollision(player, upgradeList[upgradeItem]);
         if(isColliding) {
             score+=1000;
@@ -247,7 +227,7 @@ function update() {
     }
 
     for( bullet in bulletList) {
-        updateEntity(bulletList[bullet]);
+        bulletList[bullet].update();
     }
 
     if(player.hp<=0) {
@@ -264,7 +244,7 @@ function update() {
         ctx.fillText("Score " + score,200,20);
         score++;
     }
-    updatePlayerPosition();
+    player.update();
 }
 
 var ant = setInterval(() => {
@@ -279,30 +259,23 @@ document.onmousemove = (mouse)=> {
     mouseX-=player.x;
     mouseY-=player.y;
 
-    player.angle = Math.atan2(mouseX,mouseY)/Math.PI * 180;
+    player.aimAngle = Math.atan2(mouseX,mouseY)/Math.PI * 180;
 }
-shoot = (entity,owa)=> {
-    if(canShort == true)
-            randomlyGenerateBullet(entity,owa);
-        canShort = false;
-}
-wait = ()=> {
-    setTimeout(() => {
-        canShort = true;            
-    }, 300);
-}
+
 document.onclick = ()=> {
-    shoot(player);
-    wait();
+    performAttack(player)
 } 
+performAttack  = actor => {
+    generateBullets(actor);
+}
 document.oncontextmenu = (event)=> {
     event.preventDefault();
-    var angle=0;
-    while(angle <=360) {
-        shoot(player,player.angle - angle++);
-        canShort = true;
-    }
-    wait();
+    performSpecialAttack(player);
+}
+performSpecialAttack = actor => {
+    generateBullets(actor,actor.aimAngle - 5);
+    generateBullets(actor,actor.aimAngle);
+    generateBullets(actor,actor.aimAngle + 5);
 }
 document.onkeydown =(event)=> {
     if(event.keyCode == 68 || event.keyCode == 39) {
