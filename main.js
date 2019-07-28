@@ -16,6 +16,17 @@ var canShort;
 var player;
 wait = false;                
 
+stayInBoundary = (self) => {
+    if(self.x < self.width/2)
+    self.x = self.width/2;
+    if(self.x > widthFrame - self.width/2)
+        self.x = widthFrame - self.width/2;
+    if(self.y < self.height/2)
+        self.y = self.height/2;
+    if(self.y > heightFrame - self.height/2)
+        self.y = heightFrame - self.height/2;
+}
+
 Entity = (type,id,x,y,xspd,yspd,width,height,color)=> {
     var self = {
         type:type,
@@ -42,7 +53,7 @@ Entity = (type,id,x,y,xspd,yspd,width,height,color)=> {
             if(self.pressingUp == true) {
                 self.y-=10;
             }
-            stayInBoundary();
+            stayInBoundary(self);
         } else {
             self.x+=self.xspd;
             self.y+=self.yspd;
@@ -97,6 +108,29 @@ createPlayer = ()=> {
     self.pressingLeft = false,
     self.pressingUp = false,
     self.aimAngle = 0
+    var super_update = self.update;
+    self.update = () => {
+        super_update();
+        if(self.hp<=0) {
+            ctx.save()
+            ctx.font = '40px Arial';    
+            ctx.fillText("Game Over " + "Score:" + score,25,heightFrame/2);
+                setTimeout(() => {
+                    startNewGame();            
+                }, 0);
+            ctx.restore();
+            } else {
+                self.draw();
+                ctx.fillText("HP" + self.hp,20,20);
+                ctx.fillText("Score " + score,200,20);
+                score++;
+            }
+    }
+    self.performSpecialAttack = () => {
+        generateBullets(self,self.aimAngle - 5);
+        generateBullets(self,self.aimAngle);
+        generateBullets(self,self.aimAngle + 5);
+    }
     player = self;
 }
 
@@ -105,18 +139,62 @@ function enemy(id,x,y,xspd,yspd,width,height,color) {
     self.aimAngle = 0;
     self.attackSpeed = 0;
     self.attackCounter = 0;
+    var super_update = self.update;
+    self.update = () => {
+        super_update();
+        if(framesCount%25 == 0) 
+            performAttack(self)
+        var isColliding = player.testCollision(self);
+        if(isColliding && wait === false) {
+            wait = true;
+            player.hp--;
+            setTimeout(() => {
+                wait = false;                
+            }, 200);
+        }
+    }
     enemyList[id] = self;
 }
 
 bullets = (id,x,y,xspd,yspd,width,height,color,aimAngle)=> {
     var self = Entity('bullets',id,x,y,xspd,yspd,width,height,color);
     self.timer = 0;
+    self.aimAngle = aimAngle;
+    var super_update = self.update;
+    self.update = () => {
+        super_update();
+        // for( item in enemyList) {
+            // var isColliding = self.testCollision(enemyList[item]);
+            // if(isColliding) {
+            //     delete self;
+            //     delete enemyList[item];
+            //     break;
+            // } else 
+            if(self.timer++ >= 50) {
+                delete bulletList[self.id]; 
+                // break;
+            // }
+        }
+    }
     bulletList[id] = self;
 }
 
 function upgrade(id,x,y) {
     var self = Entity('upgrade',id,x,y,0,0,20,20,'greenyellow');
     self.timer = 0;
+    var super_update = self.update;
+    self.update = () => {
+        super_update();
+        self.timer++;
+        var isColliding = player.testCollision(self);
+        if(isColliding) {
+            score+=1000;
+            player.hp++;
+            delete upgradeList[self.id];
+        } else if(self.timer>=100) {
+            delete upgradeList[self.id];
+        }
+    }
     upgradeList[id] = self;
 }
 
@@ -168,16 +246,6 @@ var startNewGame = ()=> {
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
 }
-stayInBoundary = ()=> {
-    if(player.x < player.width/2)
-    player.x = player.width/2;
-    if(player.x > widthFrame - player.width/2)
-        player.x = widthFrame - player.width/2;
-    if(player.y < player.height/2)
-        player.y = player.height/2;
-    if(player.y > heightFrame - player.height/2)
-        player.y = heightFrame - player.height/2;
-}
 function update() {
 
     var todelete = false;
@@ -190,62 +258,18 @@ function update() {
     // for enemies
     for(var item in enemyList) {
         enemyList[item].update();
-        var isColliding = player.testCollision(enemyList[item]);
-        if(isColliding && wait === false) {
-            wait = true;
-            player.hp--;
-            setTimeout(() => {
-                wait = false;                
-            }, 200);
-        }
     } 
     // for bullets
     for(var bullet in bulletList) {
-        bulletList[bullet].timer++;
-        for( item in enemyList) {
-            // var isColliding = bulletList[bullet].testCollision(enemyList[item]);
-            // if(isColliding) {
-            //     delete bulletList[bullet];
-            //     delete enemyList[item];
-            //     break;
-            // } else 
-            if(bulletList[bullet].timer >= 50) {
-                delete bulletList[bullet]; 
-                break;
-            }
-        }
+        bulletList[bullet].update();
     }
     //for upgrade
     for(var upgradeItem in upgradeList) {
-        upgradeList[upgradeItem].timer++;
         upgradeList[upgradeItem].update();
-        var isColliding = player.testCollision(upgradeList[upgradeItem]);
-        if(isColliding) {
-            score+=1000;
-            player.hp++;
-            delete upgradeList[upgradeItem];
-        } else if(upgradeList[upgradeItem].timer>=100) {
-            delete upgradeList[upgradeItem];
-        }
     }
-
+    //for bullets
     for( bullet in bulletList) {
         bulletList[bullet].update();
-    }
-
-    if(player.hp<=0) {
-    ctx.save()
-    ctx.font = '40px Arial';    
-    ctx.fillText("Game Over " + "Score:" + score,25,heightFrame/2);
-        setTimeout(() => {
-            startNewGame();            
-        }, 0);
-    ctx.restore();
-    } else {
-        player.draw();
-        ctx.fillText("HP" + player.hp,20,20);
-        ctx.fillText("Score " + score,200,20);
-        score++;
     }
     player.update();
 }
@@ -273,13 +297,9 @@ performAttack  = actor => {
 }
 document.oncontextmenu = (event)=> {
     event.preventDefault();
-    performSpecialAttack(player);
+    player.performSpecialAttack();
 }
-performSpecialAttack = actor => {
-    generateBullets(actor,actor.aimAngle - 5);
-    generateBullets(actor,actor.aimAngle);
-    generateBullets(actor,actor.aimAngle + 5);
-}
+
 document.onkeydown =(event)=> {
     if(event.keyCode == 68 || event.keyCode == 39) {
         player.pressingRight = true;
