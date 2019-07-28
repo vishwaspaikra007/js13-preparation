@@ -5,8 +5,8 @@ var ctx = document.getElementById('ctx').getContext('2d');
 ctx.font = "30px Arial";
 var enemyList = {};
 var frames = 30;
-var height = 500;
-var width = 500;
+var heightFrame = 500;
+var widthFrame = 500;
 var collisionArea = 30;
 var framesCount = 0;
 var score = 0;
@@ -14,6 +14,7 @@ var upgradeList = {};
 var bulletList = {};
 var canShort;
 var player;
+wait = false;                
 
 Entity = (type,id,x,y,xspd,yspd,width,height,color)=> {
     var self = {
@@ -27,9 +28,64 @@ Entity = (type,id,x,y,xspd,yspd,width,height,color)=> {
         height:height,
         color:color,
     }
+    self.updatePosition = () => {
+        if(self.type === 'player') {
+            if(self.pressingRight == true) {
+                self.x+=10;
+            }
+            if(self.pressingDown == true) {
+                self.y+=10;
+            }
+            if(self.pressingLeft == true) {
+                self.x-=10;
+            }
+            if(self.pressingUp == true) {
+                self.y-=10;
+            }
+            stayInBoundary();
+        } else {
+            self.x+=self.xspd;
+            self.y+=self.yspd;
+            if(self.x>widthFrame || self.x<0) {
+                self.xspd=-self.xspd;
+            }if(self.y>heightFrame || self.y<0) {
+                self.yspd=-self.yspd;
+            }
+        }
+    }
+    self.draw = ()=> {
+        ctx.fillStyle=self.color;
+        ctx.fillRect(self.x-self.width/2,self.y-self.height/2,self.width,self.height);
+    }
     self.update = () => {
-        updateEntityPosition(self);
-        drawEntity(self);
+        self.updatePosition();
+        self.draw();
+    }
+    self.getDistance = (entity) => {
+        var x = Math.abs(self.x - entity.x);
+        var y = Math.abs(self.y - entity.y);
+        return Math.sqrt(x*x + y*y);
+    }
+    self.testCollisionRect = (rect1,rect2) => {
+        return rect1.x<=rect2.x+rect2.width
+                && rect2.x<=rect1.x+rect1.width
+                && rect1.y<=rect2.y+rect2.width
+                && rect2.y<=rect1.y+rect1.width
+    }
+    self.testCollision = (entity) => {
+        rect1 = {
+            x:self.x - self.width/2,
+            y:self.y - self.height/2,
+            width:self.width,
+            height:self.height
+        }
+        rect2 = {
+            x:entity.x - entity.width/2,
+            y:entity.y - entity.height/2,
+            width:entity.width,
+            height:entity.height
+        }
+        return self.testCollisionRect(rect1, rect2)
     }
     return self;
 }
@@ -58,76 +114,17 @@ bullets = (id,x,y,xspd,yspd,width,height,color,aimAngle)=> {
     bulletList[id] = self;
 }
 
-function upgrade(id,x,y,xspd,yspd,width,height,color) {
-    var self = Entity('upgrade',id,x,y,xspd,yspd,width,height,color);
+function upgrade(id,x,y) {
+    var self = Entity('upgrade',id,x,y,0,0,20,20,'greenyellow');
     self.timer = 0;
     upgradeList[id] = self;
 }
 
-var drawEntity = (entity)=> {
-    ctx.save();
-    ctx.fillStyle=entity.color;
-    ctx.fillRect(entity.x-entity.width/2,entity.y-entity.height/2,entity.width,entity.height);
-    ctx.restore();
-}
-
-function updateEntityPosition(entity) {
-    if(entity.type === 'player') {
-        if(player.pressingRight == true) {
-            player.x+=10;
-        }
-        if(player.pressingDown == true) {
-            player.y+=10;
-        }
-        if(player.pressingLeft == true) {
-            player.x-=10;
-        }
-        if(player.pressingUp == true) {
-            player.y-=10;
-        }
-        stayInBoundary();
-    } else {
-        entity.x+=entity.xspd;
-        entity.y+=entity.yspd;
-        if(entity.x>width || entity.x<0) {
-            entity.xspd=-entity.xspd;
-        }if(entity.y>height || entity.y<0) {
-            entity.yspd=-entity.yspd;
-        }
-    }
-    
-}
-function getDistance(player, enemy) {
-    var x = Math.abs(player.x - enemy.x);
-    var y = Math.abs(player.y - enemy.y);
-    return Math.sqrt(x*x + y*y);
-}
-function testCollisionRect (entity1, entity) {
-    return entity1.x<=entity.x+entity.width
-            && entity.x<=entity1.x+entity1.width
-            && entity1.y<=entity.y+entity.width
-            && entity.y<=entity1.y+entity1.width
-}
-function testCollision(entity1, entity) {
-    rect1 = {
-        x:entity1.x - entity1.width/2,
-        y:entity1.y - entity1.height/2,
-        width:entity1.width,
-        height:entity1.height
-    }
-    rect2 = {
-        x:entity.x - entity.width/2,
-        y:entity.y - entity.height/2,
-        width:entity.width,
-        height:entity.height
-    }
-    return testCollisionRect(rect1, rect2)
-}
 
 var randomlyGenerateEnemy = ()=> {
     var rid = Math.random();
-    var rx = Math.random()*width;
-    var ry = Math.random()*width;
+    var rx = Math.random()*widthFrame;
+    var ry = Math.random()*widthFrame;
     var rxspd = 1  + Math.random()*10;
     var ryspd = 1  + Math.random()*10;
     var rwidth = 10 + Math.random()*30;
@@ -154,8 +151,8 @@ var generateBullets = (entity,overwriteAngle)=> {
 
 var randomlyGenerateUpgrade = ()=> {
     var rid = Math.random();
-    var rx = Math.random()*width;
-    var ry = Math.random()*width;
+    var rx = Math.random()*widthFrame;
+    var ry = Math.random()*widthFrame;
     upgrade(rid,rx,ry);
 } 
 createPlayer();
@@ -166,6 +163,7 @@ var startNewGame = ()=> {
     upgradeList = {};
     enemyList = {};
     bulletList = {};
+    createPlayer();
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
@@ -173,17 +171,17 @@ var startNewGame = ()=> {
 stayInBoundary = ()=> {
     if(player.x < player.width/2)
     player.x = player.width/2;
-    if(player.x > width - player.width/2)
-        player.x = width - player.width/2;
+    if(player.x > widthFrame - player.width/2)
+        player.x = widthFrame - player.width/2;
     if(player.y < player.height/2)
         player.y = player.height/2;
-    if(player.y > height - player.height/2)
-        player.y = height - player.height/2;
+    if(player.y > heightFrame - player.height/2)
+        player.y = heightFrame - player.height/2;
 }
 function update() {
 
     var todelete = false;
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, widthFrame, heightFrame);
     if(framesCount%50 == 0) 
         randomlyGenerateEnemy();
     if(framesCount%100 == 0)
@@ -192,21 +190,26 @@ function update() {
     // for enemies
     for(var item in enemyList) {
         enemyList[item].update();
-        var isColliding = testCollision(player, enemyList[item]);
-        if(isColliding) {
+        var isColliding = player.testCollision(enemyList[item]);
+        if(isColliding && wait === false) {
+            wait = true;
             player.hp--;
+            setTimeout(() => {
+                wait = false;                
+            }, 200);
         }
     } 
     // for bullets
     for(var bullet in bulletList) {
         bulletList[bullet].timer++;
         for( item in enemyList) {
-            var isColliding = testCollision(bulletList[bullet], enemyList[item]);
-            if(isColliding) {
-                delete bulletList[bullet];
-                delete enemyList[item];
-                break;
-            } else if(bulletList[bullet].timer >= 50) {
+            // var isColliding = bulletList[bullet].testCollision(enemyList[item]);
+            // if(isColliding) {
+            //     delete bulletList[bullet];
+            //     delete enemyList[item];
+            //     break;
+            // } else 
+            if(bulletList[bullet].timer >= 50) {
                 delete bulletList[bullet]; 
                 break;
             }
@@ -216,7 +219,7 @@ function update() {
     for(var upgradeItem in upgradeList) {
         upgradeList[upgradeItem].timer++;
         upgradeList[upgradeItem].update();
-        var isColliding = testCollision(player, upgradeList[upgradeItem]);
+        var isColliding = player.testCollision(upgradeList[upgradeItem]);
         if(isColliding) {
             score+=1000;
             player.hp++;
@@ -233,13 +236,13 @@ function update() {
     if(player.hp<=0) {
     ctx.save()
     ctx.font = '40px Arial';    
-    ctx.fillText("Game Over " + "Score:" + score,25,height/2);
+    ctx.fillText("Game Over " + "Score:" + score,25,heightFrame/2);
         setTimeout(() => {
             startNewGame();            
-        }, 2000);
+        }, 0);
     ctx.restore();
     } else {
-        drawEntity(player);
+        player.draw();
         ctx.fillText("HP" + player.hp,20,20);
         ctx.fillText("Score " + score,200,20);
         score++;
