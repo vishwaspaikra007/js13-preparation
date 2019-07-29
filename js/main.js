@@ -15,48 +15,56 @@ var bulletList = {};
 var canShort;
 var player;
 wait = false;  
+img.bg = new Image();
+img.bg.src = './img/bg.png';
 
 stayInBoundary = (self) => {
     if(self.x < self.width/2)
-    self.x = self.width/2;
-    if(self.x > widthFrame - self.width/2)
-        self.x = widthFrame - self.width/2;
+        self.x = self.width/2;
+    if(self.x > currentMap.width - self.width/2)
+        self.x = currentMap.width - self.width/2;
     if(self.y < self.height/2)
         self.y = self.height/2;
-    if(self.y > heightFrame - self.height/2)
-        self.y = heightFrame - self.height/2;
+    if(self.y > currentMap.height - self.height/2)
+        self.y = currentMap.height - self.height/2;
 }
 
 var randomlyGenerateEnemy = ()=> {
     var rid = Math.random();
-    var rx = Math.random()*widthFrame;
-    var ry = Math.random()*widthFrame;
-    var rxspd = 1  + Math.random()*10;
-    var ryspd = 1  + Math.random()*10;
-    var rwidth = 10 + Math.random()*30;
-    var rheight = 10 + Math.random()*30;
+    var rx = Math.random()*currentMap.width;
+    var ry = Math.random()*currentMap.height;
+    var rxspd = 1  + Math.random()*4;
+    var ryspd = 1  + Math.random()*4;
+    var rwidth = 50;
+    var rheight = 50;
     enemy(rid,rx,ry,rxspd,ryspd,rwidth,rheight);
 } 
 
-var generateBullets = (entity,overwriteAngle)=> {
+var performAttack = (entity,atkspd,overwriteAngle)=> {
     var bid = Math.random();
     var bx = entity.x;
     var by = entity.y;
-    var bwidth = 10 ;
-    var bheight = 10;
+    var bwidth = 22 ;
+    var bheight = 22;
     var baimAngle = entity.aimAngle;
     if(overwriteAngle !== undefined) {
         baimAngle = overwriteAngle;
     }
-    var byspd = Math.cos(baimAngle/180*Math.PI)*5;
-    var bxspd = Math.sin(baimAngle/180*Math.PI)*5;
-    bullets(bid,bx,by,bxspd,byspd,bwidth,bheight,baimAngle);
+    if(atkspd === undefined) {
+        var byspd = Math.cos(baimAngle/180*Math.PI)*2;
+        var bxspd = Math.sin(baimAngle/180*Math.PI)*2;
+    } else {
+        var byspd = Math.cos(baimAngle/180*Math.PI)*8;
+        var bxspd = Math.sin(baimAngle/180*Math.PI)*8;
+    }
+   
+    bullets(bid,bx,by,bxspd,byspd,bwidth,bheight,baimAngle,entity.type);
 } 
 
 var randomlyGenerateUpgrade = ()=> {
     var rid = Math.random();
-    var rx = Math.random()*widthFrame;
-    var ry = Math.random()*widthFrame;
+    var rx = Math.random()*currentMap.width;
+    var ry = Math.random()*currentMap.height;
     upgrade(rid,rx,ry);
 } 
 createPlayer();
@@ -72,10 +80,30 @@ var startNewGame = ()=> {
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
 }
-function update() {
 
+Maps = (id,imgSrc,width,height)=> {
+    var self = {
+        id:id,
+        image:new Image(),
+        width:width,
+        height:height
+    }
+    self.image.src = imgSrc;
+
+    self.drawMap = () => {
+        var x = widthFrame/2 - player.x;
+        var y = heightFrame/2 - player.y;
+        ctx.drawImage(img.bg,0,0,img.bg.width,img.bg.height,x,y,img.bg.width*30,img.bg.height*30);
+    }
+    return self;
+}
+
+currentMap = Maps('field','../img/bg.png',1200,1050);
+
+function update() {
     var todelete = false;
     ctx.clearRect(0, 0, widthFrame, heightFrame);
+    currentMap.drawMap();
     if(framesCount%50 == 0) 
         randomlyGenerateEnemy();
     if(framesCount%100 == 0)
@@ -109,18 +137,18 @@ document.onmousemove = (mouse)=> {
     mouseX = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
     mouseY = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
     
-    mouseX-=player.x;
-    mouseY-=player.y;
+    mouseX-=widthFrame/2;
+    mouseY-=heightFrame/2;
 
     player.aimAngle = Math.atan2(mouseX,mouseY)/Math.PI * 180;
 }
 
 document.onclick = ()=> {
-    performAttack(player)
+    performAttack(player,8)
 } 
-performAttack  = actor => {
-    generateBullets(actor);
-}
+// performAttack  = actor => {
+//     generateBullets(actor);
+// }
 document.oncontextmenu = (event)=> {
     event.preventDefault();
     player.performSpecialAttack();
@@ -153,4 +181,3 @@ document.onkeyup =(event)=> {
         wait();
     }
 }
-

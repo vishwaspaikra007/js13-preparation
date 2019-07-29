@@ -13,8 +13,6 @@ img.bullet.src = './img/bullet.png';
 img.upgrade = new Image();
 img.upgrade.src = './img/upgrade.png';
 
-img.bg = new Image();
-img.bg.src = './img/bg.png';
 // display image
 // ctx.drawImage(img, 0, 0, 20, 20);
 
@@ -48,18 +46,26 @@ Entity = (type,id,x,y,xspd,yspd,width,height,img)=> {
         } else {
             self.x+=self.xspd;
             self.y+=self.yspd;
-            if(self.x>widthFrame || self.x<0) {
+            if(self.x>currentMap.width || self.x<0) {
                 self.xspd=-self.xspd;
-            }if(self.y>heightFrame || self.y<0) {
+            }if(self.y>currentMap.height || self.y<0) {
                 self.yspd=-self.yspd;
             }
         }
     }
     self.draw = ()=> {
         ctx.save();
-        var x = self.x-self.width/2;
-        var y = self.y-self.height/2;
-        ctx.drawImage(self.img, x, y, 50, 50);
+        var x = self.x-player.x;
+        var y = self.y-player.y;
+
+        x += widthFrame/2;
+        y += heightFrame/2;
+
+        x -= self.width/2;
+        y -= self.height/2;
+        // ctx.drawImage(self.img, x, y, 50, 50);
+        ctx.drawImage(self.img,0,0,
+            self.img.width,self.img.height,x,y,self.width,self.height)
         ctx.restore();
     }
     self.update = () => {
@@ -95,7 +101,7 @@ Entity = (type,id,x,y,xspd,yspd,width,height,img)=> {
     return self;
 }
 createPlayer = ()=> {
-    var self = Entity('player','myId',50,40,30,5,20,20,img.player);
+    var self = Entity('player','myId',50,40,30,5,40,40,img.player);
     self.hp = 10;
     self.pressingRight = false,
     self.pressingDown = false,
@@ -111,7 +117,7 @@ createPlayer = ()=> {
             ctx.fillText("Game Over " + "Score:" + score,25,heightFrame/2);
                 setTimeout(() => {
                     startNewGame();            
-                }, 0);
+                }, 1500);
             ctx.restore();
             } else {
                 self.draw();
@@ -121,9 +127,9 @@ createPlayer = ()=> {
             }
     }
     self.performSpecialAttack = () => {
-        generateBullets(self,self.aimAngle - 5);
-        generateBullets(self,self.aimAngle);
-        generateBullets(self,self.aimAngle + 5);
+        performAttack(self,8,self.aimAngle - 15);
+        performAttack(self,8,self.aimAngle);
+        performAttack(self,8,self.aimAngle + 15);
     }
     player = self;
 }
@@ -136,7 +142,7 @@ function enemy(id,x,y,xspd,yspd,width,height) {
     var super_update = self.update;
     self.update = () => {
         super_update();
-        if(framesCount%25 == 0) 
+        if(framesCount%125 == 0) 
             performAttack(self)
         var isColliding = player.testCollision(self);
         if(isColliding && wait === false) {
@@ -144,37 +150,48 @@ function enemy(id,x,y,xspd,yspd,width,height) {
             player.hp--;
             setTimeout(() => {
                 wait = false;                
-            }, 200);
+            }, 600);
         }
     }
     enemyList[id] = self;
 }
 
-bullets = (id,x,y,xspd,yspd,width,height,aimAngle)=> {
+bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
     var self = Entity('bullets',id,x,y,xspd,yspd,width,height,img.bullet);
     self.timer = 0;
     self.aimAngle = aimAngle;
+    self.combatType = combatType;
     var super_update = self.update;
     self.update = () => {
         super_update();
-        // for( item in enemyList) {
-            // var isColliding = self.testCollision(enemyList[item]);
-            // if(isColliding) {
-            //     delete self;
-            //     delete enemyList[item];
-            //     break;
-            // } else 
-            if(self.timer++ >= 50) {
-                delete bulletList[self.id]; 
-                // break;
-            // }
+        if(self.combatType === 'player') {
+            for( item in enemyList) {
+                if(self.testCollision(enemyList[item])){
+                    delete self;
+                    delete enemyList[item];
+                    break;
+                } 
+            }
+        }else if(self.combatType === 'enemy') {
+            if(self.testCollision(player) && wait===false){
+                delete self;
+                wait = true;
+                player.hp--;
+                setTimeout(() => {
+                    wait = false;                
+                }, 600);
+            } 
         }
+        if (self.timer++ >= 150) {
+            delete bulletList[self.id]; 
+        }
+        
     }
     bulletList[id] = self;
 }
 
 function upgrade(id,x,y) {
-    var self = Entity('upgrade',id,x,y,0,0,20,20,img.upgrade);
+    var self = Entity('upgrade',id,x,y,0,0,40,40,img.upgrade);
     self.timer = 0;
     var super_update = self.update;
     self.update = () => {
