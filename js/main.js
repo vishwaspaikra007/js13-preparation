@@ -14,7 +14,9 @@ var upgradeList = {};
 var bulletList = {};
 var canShort;
 var player;
-wait = false;  
+wait = false; 
+firedelay = false; 
+
 img.bg = new Image();
 img.bg.src = './img/bg.png';
 
@@ -33,11 +35,9 @@ var randomlyGenerateEnemy = ()=> {
     var rid = Math.random();
     var rx = Math.random()*currentMap.width;
     var ry = Math.random()*currentMap.height;
-    var rxspd = 1  + Math.random()*4;
-    var ryspd = 1  + Math.random()*4;
     var rwidth = 50;
     var rheight = 50;
-    enemy(rid,rx,ry,rxspd,ryspd,rwidth,rheight);
+    enemy(rid,rx,ry,rwidth,rheight);
 } 
 
 var performAttack = (entity,atkspd,overwriteAngle)=> {
@@ -144,14 +144,26 @@ document.onmousemove = (mouse)=> {
 }
 
 document.onclick = ()=> {
-    performAttack(player,8)
+    if(firedelay === false) {
+        firedelay = true;
+        performAttack(player,8);
+        setTimeout(() => {
+            firedelay = false;            
+        }, 700);
+    } 
 } 
 // performAttack  = actor => {
 //     generateBullets(actor);
 // }
 document.oncontextmenu = (event)=> {
     event.preventDefault();
-    player.performSpecialAttack();
+    if(firedelay === false) {
+        firedelay = true;
+        player.performSpecialAttack();
+        setTimeout(() => {
+            firedelay = false;            
+        }, 1700);
+    } 
 }
 
 document.onkeydown =(event)=> {

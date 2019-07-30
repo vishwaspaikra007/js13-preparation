@@ -16,42 +16,15 @@ img.upgrade.src = './img/upgrade.png';
 // display image
 // ctx.drawImage(img, 0, 0, 20, 20);
 
-Entity = (type,id,x,y,xspd,yspd,width,height,img)=> {
+Entity = (type,id,x,y,width,height,img)=> {
     var self = {
+        id: id,
         type:type,
-        id:id,
         x:x,
         y:y,
-        xspd:xspd,
-        yspd:yspd,
         width:width,
         height:height,
         img:img,
-    }
-    self.updatePosition = () => {
-        if(self.type === 'player') {
-            if(self.pressingRight == true) {
-                self.x+=10;
-            }
-            if(self.pressingDown == true) {
-                self.y+=10;
-            }
-            if(self.pressingLeft == true) {
-                self.x-=10;
-            }
-            if(self.pressingUp == true) {
-                self.y-=10;
-            }
-            stayInBoundary(self);
-        } else {
-            self.x+=self.xspd;
-            self.y+=self.yspd;
-            if(self.x>currentMap.width || self.x<0) {
-                self.xspd=-self.xspd;
-            }if(self.y>currentMap.height || self.y<0) {
-                self.yspd=-self.yspd;
-            }
-        }
     }
     self.draw = ()=> {
         ctx.save();
@@ -64,12 +37,10 @@ Entity = (type,id,x,y,xspd,yspd,width,height,img)=> {
         x -= self.width/2;
         y -= self.height/2;
         // ctx.drawImage(self.img, x, y, 50, 50);
-        ctx.drawImage(self.img,0,0,
-            self.img.width,self.img.height,x,y,self.width,self.height)
+        ctx.drawImage(self.img,0,0,self.img.width,self.img.height,x,y,self.width,self.height)
         ctx.restore();
     }
     self.update = () => {
-        self.updatePosition();
         self.draw();
     }
     self.getDistance = (entity) => {
@@ -101,7 +72,7 @@ Entity = (type,id,x,y,xspd,yspd,width,height,img)=> {
     return self;
 }
 createPlayer = ()=> {
-    var self = Entity('player','myId',50,40,30,5,40,40,img.player);
+    var self = Entity('player','myId',50,40,40,40,img.player);
     self.hp = 10;
     self.pressingRight = false,
     self.pressingDown = false,
@@ -125,6 +96,19 @@ createPlayer = ()=> {
                 ctx.fillText("Score " + score,200,20);
                 score++;
             }
+            if(self.pressingRight == true) {
+                self.x+=10;
+            }
+            if(self.pressingDown == true) {
+                self.y+=10;
+            }
+            if(self.pressingLeft == true) {
+                self.x-=10;
+            }
+            if(self.pressingUp == true) {
+                self.y-=10;
+            }
+            stayInBoundary(self);
     }
     self.performSpecialAttack = () => {
         performAttack(self,8,self.aimAngle - 15);
@@ -134,11 +118,12 @@ createPlayer = ()=> {
     player = self;
 }
 
-function enemy(id,x,y,xspd,yspd,width,height) {
-    var self = Entity('enemy',id,x,y,xspd,yspd,width,height,img.enemy);
+function enemy(id,x,y,width,height) {
+    var self = Entity('enemy',id,x,y,width,height,img.enemy);
     self.aimAngle = 0;
     self.attackSpeed = 0;
     self.attackCounter = 0;
+    
     var super_update = self.update;
     self.update = () => {
         super_update();
@@ -152,29 +137,49 @@ function enemy(id,x,y,xspd,yspd,width,height) {
                 wait = false;                
             }, 600);
         }
+        var diffx = player.x - self.x;
+        var diffy = player.y - self.y;
+
+        if(diffx > 0)
+            self.x +=3;
+        else
+            self.x -=3;
+
+            if(diffy > 0)
+            self.y +=3;
+        else
+            self.y -=3;
+
+        var diffx = player.x - self.x;
+        var diffy = player.y - self.y;
+
+        self.aimAngle = Math.atan2(diffx,diffy)/Math.PI * 180;
+
     }
     enemyList[id] = self;
 }
 
 bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
-    var self = Entity('bullets',id,x,y,xspd,yspd,width,height,img.bullet);
+    var self = Entity('bullets',id,x,y,width,height,img.bullet);
     self.timer = 0;
     self.aimAngle = aimAngle;
     self.combatType = combatType;
+    self.xspd = xspd;
+    self.yspd = yspd;
     var super_update = self.update;
     self.update = () => {
         super_update();
         if(self.combatType === 'player') {
             for( item in enemyList) {
                 if(self.testCollision(enemyList[item])){
-                    delete self;
+                delete bulletList[self.id];
                     delete enemyList[item];
                     break;
                 } 
             }
         }else if(self.combatType === 'enemy') {
             if(self.testCollision(player) && wait===false){
-                delete self;
+                delete bulletList[self.id];
                 wait = true;
                 player.hp--;
                 setTimeout(() => {
@@ -185,13 +190,19 @@ bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
         if (self.timer++ >= 150) {
             delete bulletList[self.id]; 
         }
-        
+        self.x+=self.xspd;
+            self.y+=self.yspd;
+            if(self.x>currentMap.width || self.x<0) {
+                self.xspd=-self.xspd;
+            }if(self.y>currentMap.height || self.y<0) {
+                self.yspd=-self.yspd;
+            }
     }
     bulletList[id] = self;
 }
 
 function upgrade(id,x,y) {
-    var self = Entity('upgrade',id,x,y,0,0,40,40,img.upgrade);
+    var self = Entity('upgrade',id,x,y,40,40,img.upgrade);
     self.timer = 0;
     var super_update = self.update;
     self.update = () => {
