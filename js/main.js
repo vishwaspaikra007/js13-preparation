@@ -20,6 +20,9 @@ firedelay = false;
 img.bg = new Image();
 img.bg.src = './img/bg.png';
 
+img.bg2 = new Image();
+img.bg2.src = './img/bg2.png';
+
 stayInBoundary = (self) => {
     if(self.x < self.width/2)
         self.x = self.width/2;
@@ -91,9 +94,23 @@ Maps = (id,imgSrc,width,height)=> {
     self.image.src = imgSrc;
 
     self.drawMap = () => {
-        var x = widthFrame/2 - player.x;
-        var y = heightFrame/2 - player.y;
-        ctx.drawImage(img.bg,0,0,img.bg.width,img.bg.height,x,y,img.bg.width*30,img.bg.height*30);
+        if(player.x < widthFrame/2){
+            var x = 0;
+        } else {
+            x = widthFrame/2 - player.x;
+        }
+        if(player.y < heightFrame/2){
+            var y = 0;
+        } else {
+            y = heightFrame/2 - player.y;
+        }
+        ctx.drawImage(img.bg2,0,0,img.bg.width,img.bg.height,
+            x-widthFrame/2,y-heightFrame/2,
+            img.bg.width*60,img.bg.height*60);
+        ctx.drawImage(img.bg,0,0,img.bg.width,img.bg.height,
+                        x,y,img.bg.width*30,img.bg.height*30);
+        
+
     }
     return self;
 }
@@ -149,7 +166,7 @@ document.onclick = ()=> {
         performAttack(player,8);
         setTimeout(() => {
             firedelay = false;            
-        }, 700);
+        }, 400);
     } 
 } 
 // performAttack  = actor => {
@@ -162,7 +179,7 @@ document.oncontextmenu = (event)=> {
         player.performSpecialAttack();
         setTimeout(() => {
             firedelay = false;            
-        }, 1700);
+        }, 400);
     } 
 }
 

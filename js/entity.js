@@ -28,12 +28,36 @@ Entity = (type,id,x,y,width,height,img)=> {
     }
     self.draw = ()=> {
         ctx.save();
+
         var x = self.x-player.x;
         var y = self.y-player.y;
-
-        x += widthFrame/2;
-        y += heightFrame/2;
-
+// my very first logic in this game
+        if(self.id == player.id) {
+            if(player.x>=widthFrame/2-player.width/2) {
+                x += widthFrame/2-player.width/2;
+            } else {
+                x += player.x;
+            }
+            if (player.y>=heightFrame/2-player.height/2) {
+                y += heightFrame/2-player.height/2;
+            } else {
+                y += player.y;
+            }
+        } else {
+            if(player.x>=widthFrame/2-player.width/2) {
+                x += widthFrame/2-self.width/2;
+            } else {
+                x += player.x;
+            }
+            if (player.y>=heightFrame/2-player.height/2) {
+                y += heightFrame/2-self.height/2;
+            } else {
+                y += player.y;
+            }
+            
+            
+        }
+// end of my logic..........................................................
         x -= self.width/2;
         y -= self.height/2;
         // ctx.drawImage(self.img, x, y, 50, 50);
@@ -174,6 +198,7 @@ bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
                 if(self.testCollision(enemyList[item])){
                 delete bulletList[self.id];
                     delete enemyList[item];
+                    score+=200;
                     break;
                 } 
             }
