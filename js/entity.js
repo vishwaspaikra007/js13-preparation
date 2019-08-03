@@ -1,6 +1,7 @@
 
 // load images
 var img = {};
+var spx,spy;
 img.player = new Image();
 img.player.src = './img/player.png';
 
@@ -12,6 +13,9 @@ img.bullet.src = './img/bullet.png';
 
 img.upgrade = new Image();
 img.upgrade.src = './img/upgrade.png';
+
+img.bg = new Image();
+img.bg.src = './img/bg.png';
 
 // display image
 // ctx.drawImage(img, 0, 0, 20, 20);
@@ -32,30 +36,22 @@ Entity = (type,id,x,y,width,height,img)=> {
         var x = self.x-player.x;
         var y = self.y-player.y;
 // my very first logic in this game
-        if(self.id == player.id) {
-            if(player.x>=widthFrame/2-player.width/2) {
-                x += widthFrame/2-player.width/2;
-            } else {
-                x += player.x;
-            }
-            if (player.y>=heightFrame/2-player.height/2) {
-                y += heightFrame/2-player.height/2;
-            } else {
-                y += player.y;
-            }
+
+        if(player.x>=widthFrame/2-player.width/2 && player.x < sw) {
+            x += widthFrame/2-self.width/2;
+            spx = player.x;
+        } else if(player.x >= sw) {
+            x += widthFrame/2+player.x-spx-self.width/2;
         } else {
-            if(player.x>=widthFrame/2-player.width/2) {
-                x += widthFrame/2-self.width/2;
-            } else {
-                x += player.x;
-            }
-            if (player.y>=heightFrame/2-player.height/2) {
-                y += heightFrame/2-self.height/2;
-            } else {
-                y += player.y;
-            }
-            
-            
+            x += player.x;
+        }
+        if (player.y>=heightFrame/2-player.height/2 && player.y < sh) {
+            y += heightFrame/2-self.height/2;
+            spy = player.y;
+        } else if(player.y >= sh){
+            y += heightFrame/2+player.y-spy-self.height/2;
+        }  else {
+            y += player.y;
         }
 // end of my logic..........................................................
         x -= self.width/2;

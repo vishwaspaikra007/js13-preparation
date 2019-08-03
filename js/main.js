@@ -14,24 +14,21 @@ var upgradeList = {};
 var bulletList = {};
 var canShort;
 var player;
+var sx,sy; 
+var sw,sh;
+
 wait = false; 
 firedelay = false; 
-
-img.bg = new Image();
-img.bg.src = './img/bg.png';
-
-img.bg2 = new Image();
-img.bg2.src = './img/bg2.png';
 
 stayInBoundary = (self) => {
     if(self.x < self.width/2)
         self.x = self.width/2;
-    if(self.x > currentMap.width - self.width/2)
-        self.x = currentMap.width - self.width/2;
+    if(self.x > currentMap.width - img.player.width/2)
+        self.x = currentMap.width - img.player.width/2;
     if(self.y < self.height/2)
         self.y = self.height/2;
-    if(self.y > currentMap.height - self.height/2)
-        self.y = currentMap.height - self.height/2;
+    if(self.y > currentMap.height - img.player.height/2)
+        self.y = currentMap.height - img.player.height/2;
 }
 
 var randomlyGenerateEnemy = ()=> {
@@ -92,25 +89,29 @@ Maps = (id,imgSrc,width,height)=> {
         height:height
     }
     self.image.src = imgSrc;
-
     self.drawMap = () => {
+// my logic for map movement .............................
+        sw = img.bg.width*30 - widthFrame/2;
+        sh = img.bg.height*30 - heightFrame/2;
         if(player.x < widthFrame/2){
             var x = 0;
+        } else if(player.x >= img.bg.width*30 - widthFrame/2) {
+            var x = sx;
         } else {
             x = widthFrame/2 - player.x;
+            sx = x;
         }
         if(player.y < heightFrame/2){
             var y = 0;
+        } else if(player.y >= img.bg.height*30 - heightFrame/2){
+            var y = sy;
         } else {
             y = heightFrame/2 - player.y;
+            sy = y;
         }
-        ctx.drawImage(img.bg2,0,0,img.bg.width,img.bg.height,
-            x-widthFrame/2,y-heightFrame/2,
-            img.bg.width*60,img.bg.height*60);
+// ...........................................................................
         ctx.drawImage(img.bg,0,0,img.bg.width,img.bg.height,
                         x,y,img.bg.width*30,img.bg.height*30);
-        
-
     }
     return self;
 }
