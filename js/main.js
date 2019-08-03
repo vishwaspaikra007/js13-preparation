@@ -154,10 +154,8 @@ var ant = setInterval(() => {
 document.onmousemove = (mouse)=> {
     mouseX = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
     mouseY = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
-    
-    mouseX-=widthFrame/2;
-    mouseY-=heightFrame/2;
-
+    mouseX-=bx;
+    mouseY-=by;
     player.aimAngle = Math.atan2(mouseX,mouseY)/Math.PI * 180;
 }
 

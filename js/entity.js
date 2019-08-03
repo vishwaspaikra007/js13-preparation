@@ -2,6 +2,7 @@
 // load images
 var img = {};
 var spx,spy;
+var bx,by;
 img.player = new Image();
 img.player.src = './img/player.png';
 
@@ -36,7 +37,6 @@ Entity = (type,id,x,y,width,height,img)=> {
         var x = self.x-player.x;
         var y = self.y-player.y;
 // my very first logic in this game
-
         if(player.x>=widthFrame/2-player.width/2 && player.x < sw) {
             x += widthFrame/2-self.width/2;
             spx = player.x;
@@ -53,6 +53,9 @@ Entity = (type,id,x,y,width,height,img)=> {
         }  else {
             y += player.y;
         }
+        bx = x;
+        by = y;
+
 // end of my logic..........................................................
         x -= self.width/2;
         y -= self.height/2;
@@ -212,12 +215,12 @@ bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
             delete bulletList[self.id]; 
         }
         self.x+=self.xspd;
-            self.y+=self.yspd;
-            if(self.x>currentMap.width || self.x<0) {
-                self.xspd=-self.xspd;
-            }if(self.y>currentMap.height || self.y<0) {
-                self.yspd=-self.yspd;
-            }
+        self.y+=self.yspd;
+        if(self.x>currentMap.width || self.x<0) {
+            self.xspd=-self.xspd;
+        }if(self.y>currentMap.height || self.y<0) {
+            self.yspd=-self.yspd;
+        }
     }
     bulletList[id] = self;
 }
