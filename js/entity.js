@@ -18,6 +18,9 @@ img.upgrade.src = './img/upgrade.png';
 img.bg = new Image();
 img.bg.src = './img/bg.png';
 
+img.boss = new Image();
+img.boss.src = './img/boss.png';
+
 // display image
 // ctx.drawImage(img, 0, 0, 20, 20);
 
@@ -182,6 +185,48 @@ function enemy(id,x,y,width,height) {
     enemyList[id] = self;
 }
 
+function boss(id,x,y,width,height) {
+    var self = Entity('boss',id,x,y,width,height,img.boss);
+    self.aimAngle = 0;
+    self.attackSpeed = 0;
+    self.attackCounter = 0;
+    self.hp = 10;
+    
+    var super_update = self.update;
+    self.update = () => {
+        super_update();
+        if(framesCount%125 == 0) 
+            performAttack(self)
+        var isColliding = player.testCollision(self);
+        if(isColliding && wait === false) {
+            wait = true;
+            player.hp--;
+            setTimeout(() => {
+                wait = false;                
+            }, 600);
+        }
+        var diffx = player.x - self.x;
+        var diffy = player.y - self.y;
+
+        if(diffx > 0)
+            self.x +=3;
+        else
+            self.x -=3;
+
+            if(diffy > 0)
+            self.y +=3;
+        else
+            self.y -=3;
+
+        var diffx = player.x - self.x;
+        var diffy = player.y - self.y;
+
+        self.aimAngle = Math.atan2(diffx,diffy)/Math.PI * 180;
+
+    }
+    bossList[id] = self;
+}
+
 bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
     var self = Entity('bullets',id,x,y,width,height,img.bullet);
     self.timer = 0;
@@ -199,6 +244,17 @@ bullets = (id,x,y,xspd,yspd,width,height,aimAngle,combatType)=> {
                     delete enemyList[item];
                     score+=200;
                     break;
+                } 
+            }
+            for( item in bossList) {
+                if(self.testCollision(bossList[item])){
+                    bossList[item].hp--;
+                    delete bulletList[self.id];
+                    if(bossList[item].hp <= 0) {
+                        delete bossList[item];
+                        score+=1000;
+                        break;
+                    }
                 } 
             }
         }else if(self.combatType === 'enemy') {

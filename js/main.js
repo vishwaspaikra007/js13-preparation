@@ -12,6 +12,7 @@ var framesCount = 0;
 var score = 0;
 var upgradeList = {};
 var bulletList = {};
+var bossList = {};
 var canShort;
 var player;
 var sx,sy; 
@@ -38,6 +39,15 @@ var randomlyGenerateEnemy = ()=> {
     var rwidth = 50;
     var rheight = 50;
     enemy(rid,rx,ry,rwidth,rheight);
+} 
+
+var randomlyGenerateBoss = ()=> {
+    var rid = Math.random();
+    var rx = Math.random()*currentMap.width;
+    var ry = Math.random()*currentMap.height;
+    var rwidth = 80;
+    var rheight = 80;
+    boss(rid,rx,ry,rwidth,rheight);
 } 
 
 var performAttack = (entity,atkspd,overwriteAngle)=> {
@@ -75,6 +85,7 @@ var startNewGame = ()=> {
     upgradeList = {};
     enemyList = {};
     bulletList = {};
+    bossList = {};
     createPlayer();
     randomlyGenerateEnemy();
     randomlyGenerateEnemy();
@@ -126,6 +137,8 @@ function update() {
         randomlyGenerateEnemy();
     if(framesCount%100 == 0)
         randomlyGenerateUpgrade();
+    if(framesCount%400 == 0)
+        randomlyGenerateBoss();
     framesCount++; 
     // for enemies
     for(var item in enemyList) {
@@ -142,6 +155,9 @@ function update() {
     //for bullets
     for( bullet in bulletList) {
         bulletList[bullet].update();
+    }
+    for( item in bossList) {
+        bossList[item].update();
     }
     player.update();
 }
