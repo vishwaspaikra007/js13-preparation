@@ -64,6 +64,17 @@ Entity = (type,id,x,y,width,height,img)=> {
         y -= self.height/2;
         // ctx.drawImage(self.img, x, y, 50, 50);
         ctx.drawImage(self.img,0,0,self.img.width,self.img.height,x,y,self.width,self.height)
+        if(self.type === 'boss') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.rect(x,y-10,self.width,10);
+            ctx.stroke();
+            ctx.fillStyle = "red";
+            ctx.fillRect(x,y-10,(self.hp*10)*self.width/100,10);
+            ctx.restore();
+        }
         ctx.restore();
     }
     self.update = () => {
