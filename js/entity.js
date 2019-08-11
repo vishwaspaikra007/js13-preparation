@@ -109,7 +109,7 @@ Entity = (type,id,x,y,width,height,img)=> {
     return self;
 }
 createPlayer = ()=> {
-    var self = Entity('player','myId',50,40,40,40,img.player);
+    var self = Entity('player','myId',50,60,40,40,img.player);
     self.hp = 10;
     self.pressingRight = false,
     self.pressingDown = false,
@@ -122,15 +122,18 @@ createPlayer = ()=> {
         if(self.hp<=0) {
             ctx.save()
             ctx.font = '40px Arial';    
-            ctx.fillText("Game Over " + "Score:" + score,25,heightFrame/2);
+            ctx.fillText("Game Over " + "Score:" + score,(widthFrame/2)-180,heightFrame/2);
                 setTimeout(() => {
                     startNewGame();            
-                }, 1500);
+                }, 2000);
             ctx.restore();
             } else {
                 self.draw();
-                ctx.fillText("HP" + self.hp,20,20);
-                ctx.fillText("Score " + score,200,20);
+                ctx.save();
+                ctx.font = '30px Arial';
+                ctx.fillText("HP" + self.hp,20,30);
+                ctx.fillText("Score " + score,150,30);
+                ctx.restore();
                 score++;
             }
             if(self.pressingRight == true) {

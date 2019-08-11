@@ -1,5 +1,9 @@
-<body style="display: flex;align-items:center;justify-content:center">
-<canvas id="ctx" width="500" height="500" style="border: 2px solid #000"></canvas>
+<body style="display: flex;align-items:center;justify-content:center;margin: 0px;overflow: hidden;">
+<button onclick="changeSize()" id="fullScreenBtn"
+    style="position:absolute;right: 10px;top: 10px;"
+    >Full Screen</button>
+<canvas id="ctx" width="900" height="500" 
+    style="border: 2px solid #000;box-sizing: border-box;transition: 0.5s"></canvas>
 <script src="./js/entity.js"></script>
 <script src="./js/main.js"></script>   
 </body>

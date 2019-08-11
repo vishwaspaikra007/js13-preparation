@@ -1,12 +1,14 @@
 var ctx = document.getElementById('ctx').getContext('2d');
-
+var ctxS = document.getElementById('ctx');
+var body = document.querySelector('body');
+var fullScreenBtn = document.getElementById('fullScreenBtn');
 // modify settings
 
 ctx.font = "30px Arial";
 var enemyList = {};
 var frames = 30;
-var heightFrame = 500;
-var widthFrame = 500;
+var widthFrame = ctxS.clientWidth;
+var heightFrame = ctxS.clientHeight;
 var collisionArea = 30;
 var framesCount = 0;
 var score = 0;
@@ -17,9 +19,28 @@ var canShort;
 var player;
 var sx,sy; 
 var sw,sh;
+var fullScreenbool = true;
 
 wait = false; 
-firedelay = false; 
+firedelay = false;
+
+function changeSize() {
+    if(fullScreenbool==true) {
+        widthFrame = body.clientWidth;
+        heightFrame = body.clientHeight;
+        ctxS.width  = widthFrame;
+        ctxS.height = heightFrame;
+        fullScreenbool=false;
+        fullScreenBtn.innerHTML = "Escape Full Screen";
+    } else {
+        widthFrame = 900;
+        heightFrame = 500;
+        ctxS.width  = widthFrame;
+        ctxS.height = heightFrame;
+        fullScreenbool=true;
+        fullScreenBtn.innerHTML = "Full Screen";
+    }
+}
 
 stayInBoundary = (self) => {
     if(self.x < self.width/2)
@@ -95,18 +116,18 @@ var startNewGame = ()=> {
 Maps = (id,imgSrc,width,height)=> {
     var self = {
         id:id,
-        image:new Image(),
-        width:width,
-        height:height
+        img:new Image(),
+        width:width*60,
+        height:height*50
     }
-    self.image.src = imgSrc;
+    self.img.src = imgSrc;
     self.drawMap = () => {
 // my logic for map movement .............................
-        sw = img.bg.width*30 - widthFrame/2;
-        sh = img.bg.height*30 - heightFrame/2;
+        sw = self.width - widthFrame/2;
+        sh = self.height - heightFrame/2;
         if(player.x < widthFrame/2){
             var x = 0;
-        } else if(player.x >= img.bg.width*30 - widthFrame/2) {
+        } else if(player.x >= self.width - widthFrame/2) {
             var x = sx;
         } else {
             x = widthFrame/2 - player.x;
@@ -114,20 +135,20 @@ Maps = (id,imgSrc,width,height)=> {
         }
         if(player.y < heightFrame/2){
             var y = 0;
-        } else if(player.y >= img.bg.height*30 - heightFrame/2){
+        } else if(player.y >= self.height - heightFrame/2){
             var y = sy;
         } else {
             y = heightFrame/2 - player.y;
             sy = y;
         }
 // ...........................................................................
-        ctx.drawImage(img.bg,0,0,img.bg.width,img.bg.height,
-                        x,y,img.bg.width*30,img.bg.height*30);
+        ctx.drawImage(self.img,0,0,self.width,self.height,
+                        x,y,self.width*60,self.height*60);
     }
     return self;
 }
 
-currentMap = Maps('field','../img/bg.png',1200,1050);
+currentMap = Maps('field','../img/bg.png',40,35);
 
 function update() {
     var todelete = false;
