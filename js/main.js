@@ -148,7 +148,7 @@ Maps = (id,imgSrc,width,height)=> {
     return self;
 }
 
-currentMap = Maps('field','../img/bg.png',40,35);
+currentMap = Maps('field','./img/bg.png',40,35);
 
 function update() {
     var todelete = false;
