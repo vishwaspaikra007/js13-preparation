@@ -24,6 +24,15 @@ var fullScreenbool = true;
 wait = false; 
 firedelay = false;
 
+function startScreenConfig() {
+    widthFrame = 900;
+    heightFrame = 500;
+    ctxS.width  = widthFrame;
+    ctxS.height = heightFrame;
+    fullScreenbool=true;
+    fullScreenBtn.innerHTML = "Full Screen";
+}
+
 function changeSize() {
     if(fullScreenbool==true) {
         widthFrame = body.clientWidth;
@@ -32,14 +41,38 @@ function changeSize() {
         ctxS.height = heightFrame;
         fullScreenbool=false;
         fullScreenBtn.innerHTML = "Escape Full Screen";
+        if (body.requestFullscreen) {
+            body.requestFullscreen();
+        } else if (body.mozRequestFullScreen) { /* Firefox */
+            body.mozRequestFullScreen();
+        } else if (body.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            body.webkitRequestFullscreen();
+        } else if (body.msRequestFullscreen) { /* IE/Edge */
+            body.msRequestFullscreen();
+        }
     } else {
-        widthFrame = 900;
-        heightFrame = 500;
-        ctxS.width  = widthFrame;
-        ctxS.height = heightFrame;
-        fullScreenbool=true;
-        fullScreenBtn.innerHTML = "Full Screen";
+        startScreenConfig();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) { /* Firefox */
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE/Edge */
+            document.msExitFullscreen();
+        }
     }
+    document.addEventListener('fullscreenchange', exitHandler);
+    document.addEventListener('webkitfullscreenchange', exitHandler);
+    document.addEventListener('mozfullscreenchange', exitHandler);
+    document.addEventListener('MSFullscreenChange', exitHandler);
+
+    function exitHandler() {
+        if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+        startScreenConfig();
+        ///fire your event
+        }
+    }  
 }
 
 stayInBoundary = (self) => {
